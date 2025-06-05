@@ -24,3 +24,14 @@ func (r *AuthPostgres) CreateUser(user API_Service.User) (int, error) {
 	}
 	return id, nil
 }
+
+func (r *AuthPostgres) GetUser(username, password string) (API_Service.User, error) {
+	const op = "repository.auth_postgres.GetUser"
+	var user API_Service.User
+	query := fmt.Sprintf("SELECT id FROM %s WHERE username=$1 and password_hash=$2", usersTable)
+	err := r.db.Get(&user, query, username, password)
+	if err != nil {
+		return user, fmt.Errorf("%s: %w", op, err)
+	}
+	return user, err
+}

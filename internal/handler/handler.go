@@ -27,17 +27,18 @@ func (h *Handler) InitRoutes() *chi.Mux {
 	router.Use(middleware.Recoverer)
 
 	router.Route("/auth", func(r chi.Router) {
-		r.Post("/signup", h.signUp())
-		r.Post("/signin", h.signIn())
+		r.Post("/sign-up", h.signUp())
+		r.Get("/sign-in", h.signIn())
 	})
 	router.Route("/api", func(r chi.Router) {
+		r.Use(h.userIdentity())
 		r.Route("/article", func(r chi.Router) {
-			r.Post("/", h.createArticle)
-			r.Get("/", h.getAllArticles)
+			r.Post("/", h.createArticle())
+			r.Get("/", h.getAllArticles())
 			r.Route("/{articleID}", func(r chi.Router) {
-				r.Get("/", h.getArticleById)
-				r.Put("/", h.updateArticle)
-				r.Delete("/", h.deleteArticle)
+				r.Get("/", h.getArticleById())
+				r.Put("/", h.updateArticleById())
+				r.Delete("/", h.deleteArticleById())
 			})
 
 		})

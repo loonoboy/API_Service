@@ -7,7 +7,7 @@ CREATE TABLE users(
 
 CREATE TABLE articles(
     id SERIAL PRIMARY KEY NOT NULL UNIQUE,
-    user_id INTEGER NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL,
     title VARCHAR(255) NOT NULL,
     content VARCHAR,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

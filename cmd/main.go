@@ -7,10 +7,13 @@ import (
 	"API_Service/internal/repository"
 	"API_Service/internal/repository/postgres"
 	"API_Service/internal/service"
+	"context"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -41,21 +44,43 @@ func main() {
 		log.Fatal("failed to connect to database", zap.Error(err))
 	}
 
+	if err != nil {
+		log.Fatal("failed to connect to redis", zap.Error(err))
+	}
+
 	repo := repository.NewRepository(db)
 	services := service.NewService(repo)
 	handlers := handler.NewHandler(log, services)
 
-	log.Info("starting server", zap.String("address", cfg.Addr))
+	log.Info("starting server", zap.String("address", cfg.HTTPServer.Addr))
 
 	srv := new(API_Service.Server)
-	if err = srv.Run(config.HTTPServer{
-		Addr:        cfg.HTTPServer.Addr,
-		Timeout:     cfg.HTTPServer.Timeout,
-		IdleTimeout: cfg.HTTPServer.IdleTimeout,
-	}, handlers.InitRoutes()); err != nil {
-		log.Fatal("failed to start server", zap.Error(err))
+	go func() {
+		if err = srv.Run(config.HTTPServer{
+			Addr:        cfg.HTTPServer.Addr,
+			Timeout:     cfg.HTTPServer.Timeout,
+			IdleTimeout: cfg.HTTPServer.IdleTimeout,
+		}, handlers.InitRoutes()); err != nil {
+			log.Fatal("failed to start server", zap.Error(err))
+		}
+		log.Error("server stopped")
+	}()
+	log.Info("Api_Service started")
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Info("Shutting down server")
+
+	if err := srv.Shutdown(context.Background()); err != nil {
+		log.Error("failed to shutdown server", zap.Error(err))
 	}
-	log.Error("server stopped")
+
+	if err := db.Close(); err != nil {
+		log.Error("failed to close database", zap.Error(err))
+	}
+
 }
 
 func setupLogger(env string) *zap.Logger {
