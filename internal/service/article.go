@@ -5,6 +5,8 @@ import (
 	"API_Service/internal/repository"
 )
 
+const coutArticles = 10
+
 type ArticleService struct {
 	repo repository.Article
 }
@@ -65,11 +67,19 @@ func (s *ArticleService) UpdateArticleById(userId, articleId int, input dto.Upda
 }
 
 func (s *ArticleService) GetAllArticles() ([]dto.Article, error) {
-	return s.repo.ArticleRedis.GetArticles()
+	var data []dto.Article
+	data, err := s.repo.ArticleRedis.GetArticles()
+	if data == nil || err != nil {
+		data, err = s.repo.ArticleDB.GetLastArticles(coutArticles)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return data, nil
 }
 
 func (s *ArticleService) WarmupRecentArticles() error {
-	articles, err := s.repo.GetLastArticles(10)
+	articles, err := s.repo.GetLastArticles(coutArticles)
 	if err != nil {
 		return err
 	}
@@ -77,7 +87,7 @@ func (s *ArticleService) WarmupRecentArticles() error {
 }
 
 func (s *ArticleService) RefreshRecentArticles() error {
-	articles, err := s.repo.GetLastArticles(10)
+	articles, err := s.repo.GetLastArticles(coutArticles)
 	if err != nil {
 		return err
 	}

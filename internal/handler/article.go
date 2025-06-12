@@ -21,7 +21,7 @@ type ResponseGetAll struct {
 	Data []dto.Article `json:"data"`
 }
 
-type ResponsegetArticleById struct {
+type ResponseGetArticleById struct {
 	resp.Response
 	Data dto.Article `json:"data"`
 }
@@ -139,7 +139,7 @@ func (h *Handler) getArticleById() http.HandlerFunc {
 			render.JSON(w, r, resp.Error("get article failed"))
 			return
 		}
-		render.JSON(w, r, ResponsegetArticleById{
+		render.JSON(w, r, ResponseGetArticleById{
 			Response: resp.OK(),
 			Data:     article,
 		})
