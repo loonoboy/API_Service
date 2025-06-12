@@ -1,4 +1,4 @@
-package API_Service
+package dto
 
 import (
 	"API_Service/internal/config"

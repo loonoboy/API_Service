@@ -1,4 +1,4 @@
-package API_Service
+package dto
 
 type User struct {
 	Id       int    `json:"id" db:"id"`

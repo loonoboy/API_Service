@@ -1,0 +1,3 @@
+DELETE FROM articles WHERE id BETWEEN 1 AND 10;
+
+DELETE FROM users WHERE id IN (1, 2, 3);

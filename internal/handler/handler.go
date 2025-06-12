@@ -28,13 +28,16 @@ func (h *Handler) InitRoutes() *chi.Mux {
 
 	router.Route("/auth", func(r chi.Router) {
 		r.Post("/sign-up", h.signUp())
-		r.Get("/sign-in", h.signIn())
+		r.Post("/sign-in", h.signIn())
 	})
 	router.Route("/api", func(r chi.Router) {
-		r.Use(h.userIdentity())
-		r.Route("/article", func(r chi.Router) {
-			r.Post("/", h.createArticle())
+		r.Route("/main", func(r chi.Router) {
 			r.Get("/", h.getAllArticles())
+		})
+		r.Route("/article", func(r chi.Router) {
+			r.Use(h.userIdentity())
+			r.Post("/", h.createArticle())
+			r.Get("/", h.getAllArticlesById())
 			r.Route("/{articleID}", func(r chi.Router) {
 				r.Get("/", h.getArticleById())
 				r.Put("/", h.updateArticleById())

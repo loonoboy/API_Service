@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"API_Service"
+	"API_Service/internal/dto"
 	resp "API_Service/internal/response"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,12 +18,12 @@ type ResponseCreateArticle struct {
 
 type ResponseGetAll struct {
 	resp.Response
-	Data []API_Service.Article `json:"data"`
+	Data []dto.Article `json:"data"`
 }
 
 type ResponsegetArticleById struct {
 	resp.Response
-	Data API_Service.Article `json:"data"`
+	Data dto.Article `json:"data"`
 }
 
 func (h *Handler) createArticle() http.HandlerFunc {
@@ -33,13 +33,13 @@ func (h *Handler) createArticle() http.HandlerFunc {
 			zap.String("op", op),
 			zap.String("request_id", middleware.GetReqID(r.Context())),
 		)
-		userId := r.Context().Value(UserCtx)
+		userId := r.Context().Value(userCtxKey)
 		if userId == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error("user id not found"))
 			return
 		}
-		var input API_Service.Article
+		var input dto.Article
 		if err := render.DecodeJSON(r.Body, &input); err != nil {
 			log.Error("parse request body failed", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
@@ -70,17 +70,38 @@ func (h *Handler) getAllArticles() http.HandlerFunc {
 			zap.String("op", op),
 			zap.String("request_id", middleware.GetReqID(r.Context())),
 		)
-		userId := r.Context().Value(UserCtx)
+		articles, err := h.service.Article.GetAllArticles()
+		if err != nil {
+			log.Error("get articles failed", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, resp.Error("get articles failed"))
+			return
+		}
+		render.JSON(w, r, ResponseGetAll{
+			Response: resp.OK(),
+			Data:     articles,
+		})
+	}
+}
+
+func (h *Handler) getAllArticlesById() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handler.article.getAllArticlesById"
+		log := h.log.With(
+			zap.String("op", op),
+			zap.String("request_id", middleware.GetReqID(r.Context())),
+		)
+		userId := r.Context().Value(userCtxKey)
 		if userId == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error("user id not found"))
 			return
 		}
-		articles, err := h.service.Article.GetAll(userId.(int))
+		articles, err := h.service.Article.GetAllById(userId.(int))
 		if err != nil {
-			log.Error("create article failed", zap.Error(err))
+			log.Error("get articles failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error("create article failed"))
+			render.JSON(w, r, resp.Error("get articles failed"))
 			return
 		}
 		render.JSON(w, r, ResponseGetAll{
@@ -98,7 +119,7 @@ func (h *Handler) getArticleById() http.HandlerFunc {
 			zap.String("op", op),
 			zap.String("request_id", middleware.GetReqID(r.Context())),
 		)
-		userId := r.Context().Value(UserCtx)
+		userId := r.Context().Value(userCtxKey)
 		if userId == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error("user id not found"))
@@ -132,7 +153,7 @@ func (h *Handler) updateArticleById() http.HandlerFunc {
 			zap.String("op", op),
 			zap.String("request_id", middleware.GetReqID(r.Context())),
 		)
-		userId := r.Context().Value(UserCtx)
+		userId := r.Context().Value(userCtxKey)
 		if userId == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error("user id not found"))
@@ -146,7 +167,7 @@ func (h *Handler) updateArticleById() http.HandlerFunc {
 			return
 		}
 
-		var input API_Service.UpdateArticle
+		var input dto.UpdateArticle
 		if err := render.DecodeJSON(r.Body, &input); err != nil {
 			log.Error("parse request body failed", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
@@ -171,7 +192,7 @@ func (h *Handler) deleteArticleById() http.HandlerFunc {
 			zap.String("op", op),
 			zap.String("request_id", middleware.GetReqID(r.Context())),
 		)
-		userId := r.Context().Value(UserCtx)
+		userId := r.Context().Value(userCtxKey)
 		if userId == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error("user id not found"))

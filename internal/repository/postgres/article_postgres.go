@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"API_Service"
+	"API_Service/internal/dto"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"log"
@@ -16,7 +16,7 @@ func NewArticlePostgres(db *sqlx.DB) *ArticlePostgres {
 	return &ArticlePostgres{db: db}
 }
 
-func (r *ArticlePostgres) CreateArticle(userId int, article API_Service.Article) (int, error) {
+func (r *ArticlePostgres) CreateArticle(userId int, article dto.Article) (int, error) {
 	const op = "repository.article_postgres.CreateArticle"
 	var id int
 	CreateArticleQuery := fmt.Sprintf("INSERT INTO %s (user_id, title, content) VALUES ($1, $2, $3) RETURNING id", articlesTable)
@@ -27,9 +27,9 @@ func (r *ArticlePostgres) CreateArticle(userId int, article API_Service.Article)
 	return id, nil
 }
 
-func (r *ArticlePostgres) GetAll(userId int) ([]API_Service.Article, error) {
+func (r *ArticlePostgres) GetAllById(userId int) ([]dto.Article, error) {
 	op := "repository.article_postgres.etAll"
-	var articles []API_Service.Article
+	var articles []dto.Article
 	query := fmt.Sprintf("SELECT * FROM %s WHERE user_id=$1", articlesTable)
 	err := r.db.Select(&articles, query, userId)
 	if err != nil {
@@ -38,9 +38,9 @@ func (r *ArticlePostgres) GetAll(userId int) ([]API_Service.Article, error) {
 	return articles, nil
 }
 
-func (r *ArticlePostgres) GetArticleById(userId, articleId int) (API_Service.Article, error) {
+func (r *ArticlePostgres) GetArticleById(userId, articleId int) (dto.Article, error) {
 	op := "repository.article_postgres.getArticleById"
-	var article API_Service.Article
+	var article dto.Article
 	query := fmt.Sprintf("SELECT * FROM %s WHERE user_id=$1 and id=$2", articlesTable)
 	err := r.db.Get(&article, query, userId, articleId)
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *ArticlePostgres) DeleteArticleById(userId, articleId int) error {
 	return err
 }
 
-func (r *ArticlePostgres) UpdateArticleById(userId, articleId int, input API_Service.UpdateArticle) error {
+func (r *ArticlePostgres) UpdateArticleById(userId, articleId int, input dto.UpdateArticle) error {
 	op := "repository.article_postgres.updateArticleById"
 	setValue := make([]string, 0)
 	args := make([]interface{}, 0)
@@ -89,4 +89,15 @@ func (r *ArticlePostgres) UpdateArticleById(userId, articleId int, input API_Ser
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	return err
+}
+
+func (r *ArticlePostgres) GetLastArticles(count int) ([]dto.Article, error) {
+	op := "repository.article_postgres.getLastArticles"
+	var articles []dto.Article
+	query := fmt.Sprintf("SELECT * FROM %s ORDER BY id DESC LIMIT $1", articlesTable)
+	err := r.db.Select(&articles, query, count)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	return articles, nil
 }

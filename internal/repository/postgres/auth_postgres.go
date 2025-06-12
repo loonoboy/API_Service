@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"API_Service"
+	"API_Service/internal/dto"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 )
@@ -14,7 +14,7 @@ func NewAuthPostgres(db *sqlx.DB) *AuthPostgres {
 	return &AuthPostgres{db: db}
 }
 
-func (r *AuthPostgres) CreateUser(user API_Service.User) (int, error) {
+func (r *AuthPostgres) CreateUser(user dto.User) (int, error) {
 	const op = "repository.auth_postgres.CreateUser"
 	var id int
 	query := fmt.Sprintf("INSERT INTO %s (name, username, password_hash) values ($1, $2, $3) RETURNING id", usersTable)
@@ -25,9 +25,9 @@ func (r *AuthPostgres) CreateUser(user API_Service.User) (int, error) {
 	return id, nil
 }
 
-func (r *AuthPostgres) GetUser(username, password string) (API_Service.User, error) {
+func (r *AuthPostgres) GetUser(username, password string) (dto.User, error) {
 	const op = "repository.auth_postgres.GetUser"
-	var user API_Service.User
+	var user dto.User
 	query := fmt.Sprintf("SELECT id FROM %s WHERE username=$1 and password_hash=$2", usersTable)
 	err := r.db.Get(&user, query, username, password)
 	if err != nil {

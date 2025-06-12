@@ -1,22 +1,25 @@
 package service
 
 import (
-	"API_Service"
+	"API_Service/internal/dto"
 	"API_Service/internal/repository"
 )
 
 type Authorization interface {
-	CreateUser(user API_Service.User) (int, error)
+	CreateUser(user dto.User) (int, error)
 	GenerateToken(username, password string) (string, error)
 	ParseToken(token string) (int, error)
 }
 
 type Article interface {
-	CreateArticle(userId int, article API_Service.Article) (int, error)
-	GetAll(userId int) ([]API_Service.Article, error)
-	GetArticleById(userId, articleId int) (API_Service.Article, error)
+	CreateArticle(userId int, article dto.Article) (int, error)
+	GetAllById(userId int) ([]dto.Article, error)
+	GetArticleById(userId, articleId int) (dto.Article, error)
 	DeleteArticleById(userId, articleId int) error
-	UpdateArticleById(userId, articleID int, input API_Service.UpdateArticle) error
+	UpdateArticleById(userId, articleID int, input dto.UpdateArticle) error
+	WarmupRecentArticles() error
+	RefreshRecentArticles() error
+	GetAllArticles() ([]dto.Article, error)
 }
 
 type Service struct {

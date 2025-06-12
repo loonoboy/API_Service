@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - ./internal/repository/postgres/init_db:/docker-entrypoint-initdb.d
-      - api_db-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     ports:
       - 5433:5432
   migrations:
@@ -17,9 +17,18 @@ services:
     container_name: migrations
     hostname: migrations
     volumes:
-      - ./internal/repository/postgres/migrations:/migrations
+      - ./migrations/postgres:/migrations
     depends_on:
      - postgres
     restart: "no"
+  redis:
+    image: redis:7.4.4-alpine
+    container_name: redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
 volumes:
-  api_db-data:
+  postgres-data:
+  redis-data:

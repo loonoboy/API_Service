@@ -1,22 +1,35 @@
 package repository
 
 import (
-	"API_Service"
+	"API_Service/internal/dto"
 	"API_Service/internal/repository/postgres"
+	"API_Service/internal/repository/redisDB"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 )
 
 type Authorization interface {
-	CreateUser(user API_Service.User) (int, error)
-	GetUser(username, password string) (API_Service.User, error)
+	CreateUser(user dto.User) (int, error)
+	GetUser(username, password string) (dto.User, error)
 }
 
-type Article interface {
-	CreateArticle(userId int, article API_Service.Article) (int, error)
-	GetAll(userId int) ([]API_Service.Article, error)
-	GetArticleById(userId, articleId int) (API_Service.Article, error)
+type ArticleDB interface {
+	CreateArticle(userId int, article dto.Article) (int, error)
+	GetAllById(userId int) ([]dto.Article, error)
+	GetArticleById(userId, articleId int) (dto.Article, error)
 	DeleteArticleById(userId, articleId int) error
-	UpdateArticleById(userId, articleID int, input API_Service.UpdateArticle) error
+	UpdateArticleById(userId, articleID int, input dto.UpdateArticle) error
+	GetLastArticles(count int) ([]dto.Article, error)
+}
+
+type ArticleRedis interface {
+	GetArticles() ([]dto.Article, error)
+	SetRecentArticles(articles []dto.Article) error
+}
+
+type Article struct {
+	ArticleDB
+	ArticleRedis
 }
 
 type Repository struct {
@@ -24,9 +37,12 @@ type Repository struct {
 	Article
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB, rdb *redis.Client) *Repository {
 	return &Repository{
 		Authorization: postgres.NewAuthPostgres(db),
-		Article:       postgres.NewArticlePostgres(db),
+		Article: Article{
+			ArticleDB:    postgres.NewArticlePostgres(db),
+			ArticleRedis: redisDB.NewArticleRedis(rdb),
+		},
 	}
 }

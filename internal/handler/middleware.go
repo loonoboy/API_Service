@@ -8,9 +8,11 @@ import (
 	"strings"
 )
 
+type contextKey string
+
 const (
-	authorizationHeader = "Authorization"
-	UserCtx             = "userId"
+	authorizationHeader            = "Authorization"
+	userCtxKey          contextKey = "userId"
 )
 
 func (h *Handler) userIdentity() func(next http.Handler) http.Handler {
@@ -35,7 +37,7 @@ func (h *Handler) userIdentity() func(next http.Handler) http.Handler {
 				render.JSON(w, r, resp.Error("Parse Token failed"))
 				return
 			}
-			ctx := context.WithValue(r.Context(), UserCtx, userId)
+			ctx := context.WithValue(r.Context(), userCtxKey, userId)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 		return http.HandlerFunc(fn)

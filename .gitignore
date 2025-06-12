@@ -1,4 +1,5 @@
 .env
 .idea
+.bin
 
 internal/repository/postgres/init_db/init_db.sql

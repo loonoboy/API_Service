@@ -1,19 +1,23 @@
 package main
 
 import (
-	"API_Service"
 	"API_Service/internal/config"
+	"API_Service/internal/dto"
 	"API_Service/internal/handler"
 	"API_Service/internal/repository"
 	"API_Service/internal/repository/postgres"
+	"API_Service/internal/repository/redisDB"
 	"API_Service/internal/service"
 	"context"
+	"errors"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 const (
@@ -44,26 +48,36 @@ func main() {
 		log.Fatal("failed to connect to database", zap.Error(err))
 	}
 
+	rdb, err := redisDB.NewRedisDB(config.RDB{
+		Addr:     cfg.RDB.Addr,
+		Password: cfg.RDB.Password,
+		DB:       cfg.RDB.DB,
+	})
 	if err != nil {
-		log.Fatal("failed to connect to redis", zap.Error(err))
+		log.Fatal("failed to connect to redisDB", zap.Error(err))
 	}
 
-	repo := repository.NewRepository(db)
+	repo := repository.NewRepository(db, rdb)
 	services := service.NewService(repo)
 	handlers := handler.NewHandler(log, services)
 
+	err = services.WarmupRecentArticles()
+	if err != nil {
+		log.Fatal("failed to warmupRecentArticles", zap.Error(err))
+	}
+
 	log.Info("starting server", zap.String("address", cfg.HTTPServer.Addr))
 
-	srv := new(API_Service.Server)
+	srv := new(dto.Server)
 	go func() {
 		if err = srv.Run(config.HTTPServer{
 			Addr:        cfg.HTTPServer.Addr,
 			Timeout:     cfg.HTTPServer.Timeout,
 			IdleTimeout: cfg.HTTPServer.IdleTimeout,
-		}, handlers.InitRoutes()); err != nil {
+		}, handlers.InitRoutes()); err != nil && !errors.Is(http.ErrServerClosed, err) {
 			log.Fatal("failed to start server", zap.Error(err))
 		}
-		log.Error("server stopped")
+		log.Info("server stopped")
 	}()
 	log.Info("Api_Service started")
 
@@ -73,7 +87,9 @@ func main() {
 
 	log.Info("Shutting down server")
 
-	if err := srv.Shutdown(context.Background()); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
 		log.Error("failed to shutdown server", zap.Error(err))
 	}
 

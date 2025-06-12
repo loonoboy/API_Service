@@ -11,6 +11,7 @@ type Config struct {
 	Env        string `yaml:"env" env-default:"local"`
 	HTTPServer `yaml:"http_server"`
 	DB         `yaml:"db"`
+	RDB        `yaml:"redisDB"`
 }
 
 type HTTPServer struct {
@@ -24,8 +25,14 @@ type DB struct {
 	Port     string `yaml:"port" env-required:"true"`
 	SSLMode  string `yaml:"ssl_mode" env-required:"true"`
 	Username string `env:"POSTGRES_USER"`
-	Password string `env:"POSTGRES_Password"`
+	Password string `env:"POSTGRES_PASSWORD"`
 	DBName   string `env:"POSTGRES_DB"`
+}
+
+type RDB struct {
+	Addr     string `yaml:"addr" env-default:"localhost:6379"`
+	Password string `yaml:"password" env-default:""`
+	DB       int    `yaml:"db" env-default:"0"`
 }
 
 func MustLoad() *Config {

@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"API_Service"
+	"API_Service/internal/dto"
 	resp "API_Service/internal/response"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
@@ -36,7 +36,7 @@ func (h *Handler) signUp() http.HandlerFunc {
 			zap.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		var input API_Service.User
+		var input dto.User
 
 		err := render.DecodeJSON(r.Body, &input)
 

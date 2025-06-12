@@ -1,19 +1,18 @@
 package service
 
 import (
-	"API_Service"
+	"API_Service/internal/dto"
 	"API_Service/internal/repository"
 	"crypto/sha1"
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"os"
 	"time"
 )
 
 const (
-	salt      = "eia213kjbb23jk213bj"
-	singinKey = "kjdsnn3rjk2r3njrn32"
-	tokenTTL  = time.Hour * 12
+	tokenTTL = time.Hour * 12
 )
 
 type AuthService struct {
@@ -29,7 +28,7 @@ func NewAuthService(repo repository.Authorization) *AuthService {
 	return &AuthService{repo: repo}
 }
 
-func (s *AuthService) CreateUser(user API_Service.User) (int, error) {
+func (s *AuthService) CreateUser(user dto.User) (int, error) {
 	user.Password = generatePasswordHash(user.Password)
 	return s.repo.CreateUser(user)
 }
@@ -47,14 +46,14 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 		},
 		user.Id,
 	})
-	return token.SignedString([]byte(singinKey))
+	return token.SignedString([]byte(os.Getenv("SIGN_KEY")))
 }
 
 func generatePasswordHash(password string) string {
 	hash := sha1.New()
 	hash.Write([]byte(password))
 
-	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
+	return fmt.Sprintf("%x", hash.Sum([]byte(os.Getenv("SALT"))))
 }
 
 func (s *AuthService) ParseToken(accessToken string) (int, error) {
@@ -63,7 +62,7 @@ func (s *AuthService) ParseToken(accessToken string) (int, error) {
 			return nil, errors.New("unexpected signing method")
 		}
 
-		return []byte(singinKey), nil
+		return []byte(os.Getenv("SIGN_KEY")), nil
 	})
 	if err != nil {
 		return 0, err

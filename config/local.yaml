@@ -7,3 +7,7 @@ db:
   host: "localhost"
   port: "5433"
   ssl_mode: "disable"
+rdb:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
